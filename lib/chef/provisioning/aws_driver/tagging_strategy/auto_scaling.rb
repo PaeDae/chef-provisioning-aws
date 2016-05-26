@@ -51,7 +51,7 @@ class AutoScaling
           key: k,
           value: v,
           resource_type: "auto-scaling-group",
-          propagate_at_launch: false
+          propagate_at_launch: true
         }
       }
     })
@@ -66,7 +66,7 @@ class AutoScaling
           key: k,
           value: nil,
           resource_type: "auto-scaling-group",
-          propagate_at_launch: false
+          propagate_at_launch: true
         }
       }
     })
