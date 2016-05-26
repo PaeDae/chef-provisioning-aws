@@ -25,9 +25,9 @@ class Chef::Provider::AwsVpcPeeringConnection < Chef::Provisioning::AWSDriver::A
 
     options = {}
     options[:vpc_id] = new_resource.vpc
+    options = AWSResource.lookup_options(options, resource: new_resource)
     options[:peer_vpc_id] = new_resource.peer_vpc
     options[:peer_owner_id] = new_resource.peer_owner_id unless new_resource.peer_owner_id.nil?
-    options = AWSResource.lookup_options(options, resource: new_resource)
 
     ec2_resource = new_resource.driver.ec2_resource
     vpc = ec2_resource.vpc(options[:vpc_id])
@@ -56,7 +56,7 @@ class Chef::Provider::AwsVpcPeeringConnection < Chef::Provisioning::AWSDriver::A
     peer_owner_id = vpc_peering_connection.accepter_vpc_info.owner_id
 
     desired_vpc_id = Chef::Resource::AwsVpc.get_aws_object_id(new_resource.vpc, resource: new_resource)
-    desired_peer_vpc_id = Chef::Resource::AwsVpc.get_aws_object_id(new_resource.peer_vpc, resource: new_resource)
+    desired_peer_vpc_id = new_resource.peer_vpc
     desired_peer_owner_id = new_resource.peer_owner_id
 
     if desired_vpc_id && vpc_id != desired_vpc_id
