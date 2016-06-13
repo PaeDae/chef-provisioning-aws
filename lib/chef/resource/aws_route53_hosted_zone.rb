@@ -1,5 +1,4 @@
-#
-# Copyright:: Copyright (c) 2015 Chef Software Inc.
+
 # License:: Apache License, Version 2.0
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,6 +16,7 @@
 
 require 'chef/provisioning/aws_driver/aws_resource'
 require 'chef/resource/aws_route53_record_set'
+require 'chef/resource/aws_vpc'
 require 'securerandom'
 
 # the AWS API doesn't have these objects linked, so give it some help.
@@ -41,6 +41,8 @@ class Chef::Resource::AwsRoute53HostedZone < Chef::Provisioning::AWSDriver::AWSR
   # the resource name and the AWS ID have to be related here, since they're tightly coupled elsewhere.
   attribute :aws_route53_zone_id, kind_of: String, aws_id_attribute: true,
                                   default: lazy { name =~ /^\/hostedzone\// ? name : nil }
+
+  attribute :vpc, kind_of: [String, AwsVpc, AWS::EC2::VPC], default: ""
 
   DEFAULTABLE_ATTRS = [:ttl, :type]
 
@@ -88,7 +90,6 @@ class Chef::Provider::AwsRoute53HostedZone < Chef::Provisioning::AWSDriver::AWSP
 
   def make_hosted_zone_config(new_resource)
     config = {}
-    # add :private_zone here once VPC validation is enabled.
     [:comment].each do |attr|
       value = new_resource.send(attr)
       if value
@@ -116,6 +117,13 @@ class Chef::Provider::AwsRoute53HostedZone < Chef::Provisioning::AWSDriver::AWSP
         hosted_zone_config: hosted_zone_config,
         caller_reference: "chef-provisioning-aws-#{SecureRandom.uuid.upcase}",  # required, unique each call
       }
+
+      if new_resource.vpc
+        values[:vpc] = {
+          vpc_id: Chef::Resource::AwsVpc.get_aws_object(new_resource.vpc, resource: new_resource).id,
+          vpc_region: region
+        }
+      end
 
       # this will validate the record_set resources prior to making any AWS calls.
       record_set_resources = get_record_sets_from_resource(new_resource)
